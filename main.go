@@ -9,6 +9,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/kms"
 )
 
+func parameterValidation(objectKey, objectName string) bool {
+	if objectKey == "" || objectName == "" {
+		return false
+	}
+	return true
+}
+
 func encryptSecret(secretValue string) (string, error) {
 
 	var kmsRegion string
