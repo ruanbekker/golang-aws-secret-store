@@ -64,6 +64,39 @@ func decryptSecret(encryptedCipher string) (string, error) {
 	return blobString, nil
 }
 
+func putSecret(region string, secretName string, secretValue string) string {
+
+	var secretBucketName string
+
+	secretBucketName = os.Getenv("S3_BUCKET")
+
+	s := session.Must(session.NewSession())
+	svc := s3.New(s, &aws.Config{
+		Region: aws.String(region),
+	})
+
+	params := &s3.PutObjectInput{
+		Bucket:               aws.String(secretBucketName),
+		Key:                  aws.String(secretName),
+		Body:                 bytes.NewReader([]byte(secretValue)),
+		ServerSideEncryption: aws.String("AES256"),
+		//ServerSideEncryption: aws.String("aws:kms"),
+		//SSEKMSKeyId:          aws.String(kmsKey),
+	}
+
+	resp, err := svc.PutObject(params)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	if resp == nil {
+		fmt.Println(err.Error())
+	}
+
+	putResponse := "OK"
+	return putResponse
+}
+
 func main() {
 	fmt.Println("Hello, World")
 }
