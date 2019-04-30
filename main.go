@@ -97,6 +97,41 @@ func putSecret(region string, secretName string, secretValue string) string {
 	return putResponse
 }
 
+func getSecret(region string, secretName string) (string, error) {
+
+	var secretBucketName string
+
+	secretBucketName = os.Getenv("S3_BUCKET")
+
+	s := session.Must(session.NewSession())
+	svc := s3.New(s, &aws.Config{
+		Region: aws.String(region),
+	})
+
+	params := &s3.GetObjectInput{
+		Bucket: aws.String(secretBucketName),
+		Key:    aws.String(secretName),
+	}
+
+	resp, err := svc.GetObject(params)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	var reader io.ReadCloser
+	reader = resp.Body
+	defer reader.Close()
+
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to Read Key")
+		os.Exit(1)
+	}
+
+	return string(data[:]), nil
+}
+
 func main() {
 	fmt.Println("Hello, World")
 }
