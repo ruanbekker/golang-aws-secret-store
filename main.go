@@ -3,10 +3,16 @@ package main
 import (
 	"os"
 	"fmt"
+	"bytes"
+	"flag"
+	"io"
+	"io/ioutil"
+	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 func parameterValidation(objectKey, objectName string) bool {
@@ -140,5 +146,64 @@ func getSecret(region string, secretName string) (string, error) {
 }
 
 func main() {
-	fmt.Println("Hello, World")
+
+	var region string
+	var secretName string
+	var secretValue string
+	var put bool
+	var get bool
+	var help bool
+
+	flag.StringVar(&region, "region", "eu-west-1", "region name eg eu-west-1")
+	flag.StringVar(&secretName, "secretName", "", "key name eg secrets/app/hostname")
+	flag.StringVar(&secretValue, "secretValue", "", "value for secret eg app.domain.com")
+	flag.BoolVar(&put, "put", false, "create secret")
+	flag.BoolVar(&get, "get", false, "read secret")
+	//flag.StringVar(&kmsKey, "kmsKey", "", "kms key arn for encryption")
+	flag.BoolVar(&help, "help", false, "i need help")
+
+	flag.Parse()
+
+	if help == true {
+		log.Output(1, "secretscli -put region secrets/app/password P@ssword")
+	}
+
+	// if parameterValidation(secretName, secretValue) == false {
+	// 	log.Fatal("Required Parameters Missing")
+	// }
+
+	if put == false && get == false {
+		log.Fatal("Operation required: put/get")
+	}
+
+	if put {
+		cipherValue, err := encryptSecret(secretValue)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		putResponse := putSecret(region, secretName, cipherValue)
+
+		if putResponse != "" {
+			fmt.Println(putResponse)
+		}
+	}
+
+	if get {
+		encryptedCipher, err := getSecret(region, secretName)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		plaintextValue, err := decryptSecret(encryptedCipher)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(plaintextValue)
+
+	}
 }
